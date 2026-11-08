@@ -1,0 +1,76 @@
+name: Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Byte-compile check
+        # compileall (not py_compile on a glob) so subpackages like tui_pro/ are covered too
+        run: python -m compileall -q lxdorkpro
+
+      - name: Run test suite
+        run: python -m unittest discover -s tests -v
+
+  security:
+    runs-on: ubuntu-latest
+    # Runs once (not matrixed across Python versions like `test` above) --
+    # static analysis and dependency-vulnerability results don't vary by
+    # interpreter version, so there's nothing gained from repeating this
+    # 4x and it would only make the job slower to get feedback from.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project + security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e ".[security]"
+
+      - name: Bandit (static analysis)
+        # -c pyproject.toml picks up [tool.bandit]'s exclude_dirs (tests/
+        # examples aren't the application's real security surface).
+        # -ll reports medium+ severity only, since a few low-severity
+        # findings in a security-research tool that intentionally scrapes
+        # search engines and fetches attacker-influenceable URLs are
+        # expected noise (e.g. B310 on url-opening helpers); medium+
+        # is where a finding is worth failing the build over. Every actual
+        # medium+ finding at the time this workflow was written has
+        # already been fixed or has an inline `# nosec` with a reason --
+        # this step is meant to catch new ones, not re-litigate old ones.
+        run: bandit -c pyproject.toml -r lxdorkpro/ -ll
+
+      - name: pip-audit (dependency vulnerabilities)
+        # Scans the actual pinned/installed environment (requirements.txt
+        # + requirements-tui.txt), not just the abstract version ranges in
+        # pyproject.toml, so a vulnerable transitive dependency that a
+        # loose version range would allow still gets caught.
+        run: |
+          pip install -r requirements-tui.txt
+          pip-audit -r requirements.txt -r requirements-tui.txt

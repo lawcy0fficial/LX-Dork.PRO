@@ -1,0 +1,23 @@
+# Minimal SearXNG settings override for LX-Dork-Pro.
+#
+# `use_default_settings: true` merges this on top of SearXNG's built-in
+# defaults (recent SearXNG versions support this), so we only need to
+# specify what we're changing: enabling the JSON output format, which is
+# OFF by default and required for LX-Dork-Pro's `searxng` engine to work.
+#
+# For anything beyond local/personal use, replace `secret_key` with a real
+# random value, e.g.:  openssl rand -hex 32
+
+use_default_settings: true
+
+general:
+  instance_name: "lx-dork-pro-searxng"
+
+server:
+  secret_key: "CHANGE-ME-local-use-only-not-for-production"
+  limiter: false   # disable SearXNG's own rate limiter; LX-Dork-Pro paces requests itself
+
+search:
+  formats:
+    - html
+    - json
