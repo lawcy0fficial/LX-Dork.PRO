@@ -1,0 +1,50 @@
+# Bundles LX-Dork-Pro with its own self-hosted SearXNG instance, so you get
+# free, no-API-key, multi-engine dorking with zero manual setup.
+#
+# Usage:
+#   docker compose run --rm lxdorkpro dork -d 'inurl:php?id= site:.in' -e searxng
+#   docker compose run --rm lxdorkpro preset sqli-params --target example.com -e searxng
+#   docker compose run --rm lxdorkpro doctor
+#
+# SearXNG takes a few seconds to become healthy on first start -- `depends_on`
+# with a healthcheck below makes `lxdorkpro` wait for it automatically.
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: lxdorkpro-searxng
+    ports:
+      - "127.0.0.1:8888:8080"   # loopback only: limiter is off, so don't expose an open search proxy to the LAN
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    volumes:
+      # Bind-mounted, version-controlled settings that enable the JSON
+      # output format LX-Dork-Pro's `searxng` engine needs -- it's OFF by
+      # default on a fresh SearXNG instance, so this file is required, not
+      # optional. See searxng/settings.yml for details / how to harden it.
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  lxdorkpro:
+    build: .
+    container_name: lxdorkpro
+    depends_on:
+      searxng:
+        condition: service_healthy
+    environment:
+      - LXDORK_SEARXNG_URL=http://searxng:8080
+    volumes:
+      - lxdorkpro-config:/home/lxdork/.config/lx-dork-pro
+      # Mount a local ./out directory so exported reports land on your host.
+      - ./out:/app/out
+    # No `command:` on purpose -- pass one via `docker compose run lxdorkpro <args>`
+    tty: true
+    stdin_open: true
+
+volumes:
+  lxdorkpro-config:

@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lx-dork-pro"
+version = "1.19.0"
+description = "Advanced multi-engine Google Dorking recon tool for bug bounty hunters and pentesters"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "LX-Dork-Pro Contributors" }
+]
+keywords = ["security", "bug-bounty", "recon", "osint", "google-dorking", "pentesting", "dork", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+
+dependencies = [
+    "click>=8.1",
+    "rich>=13.7",
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+]
+
+[project.optional-dependencies]
+tui = [
+    "textual>=0.58",
+]
+dev = [
+    "build>=1.0",
+    "twine>=5.0",
+]
+security = [
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+]
+
+# TODO before publishing: replace with your real repository URL(s).
+# Left unset rather than pointing at a fake github.com/example/... link,
+# since that would render as a broken link on the live PyPI page.
+# Uncomment and fill in once you have a real repo:
+#
+# [project.urls]
+# Homepage = "https://github.com/<you>/lx-dork-pro"
+# Issues = "https://github.com/<you>/lx-dork-pro/issues"
+# Changelog = "https://github.com/<you>/lx-dork-pro/blob/main/CHANGELOG.md"
+
+[project.scripts]
+lxdorkpro = "lxdorkpro.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["lxdorkpro*"]
+
+[tool.bandit]
+# Only the application code is in scope -- tests/ and examples/
+# intentionally contain patterns (fake responses, mock secrets, sample
+# plugin code) that would otherwise generate noise unrelated to the
+# actual security surface of the tool. Every B311 (random) finding in
+# the application code itself is suppressed inline with a `# nosec B311`
+# comment and a one-line reason at each specific call site, deliberately
+# NOT globally here -- keeping the check active means a future genuine
+# misuse of `random` for something security-sensitive (a token, a
+# session id) would still be flagged rather than silently exempted by a
+# blanket rule.
+exclude_dirs = ["tests", "examples", "build", "dist"]

@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+*.log
+
+# Local config / history / secrets — never commit API keys
+config.json
+history/
+
+# Common export/output file patterns from `-o`
+*.findings.json
+*.findings.csv
+*.findings.txt
+
+# Scan output / reports / screenshots
+out/
+shots/
+*.report.*
