@@ -1,0 +1,4 @@
+click>=8.1
+rich>=13.7
+requests>=2.31
+beautifulsoup4>=4.12
